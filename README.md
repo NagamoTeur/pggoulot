@@ -1,3 +1,10 @@
+> **quellog-plus** is an unofficial fork of [quellog](https://github.com/Alain-L/quellog) by Alain
+> Lesage. It adds slow statement traces with explained findings (in English or French) to every
+> report, and a few fixes. The binary and packages are named `quellog-plus`; the commands below work
+> the same. See [FORK.md](FORK.md) (in French), [docs/trace.md](docs/trace.md) and the
+> [releases](https://github.com/NagamoTeur/quellog-plus/releases). Not affiliated with the original
+> project: report fork-specific issues here.
+
 # quellog
 
 A high-performance PostgreSQL log analyzer. Processes gigabytes of logs in seconds, producing synthetic overviews, SQL performance analysis, and operational insights.

@@ -164,6 +164,9 @@ func readEntries(ctx context.Context, files []string, fn func(*parser.LogEntry))
 				e := &batch[i]
 				seq++
 				e.Seq = seq
+				if redactFlag {
+					e.Message = parser.RedactMessage(e.Message)
+				}
 				analysis.StampBodyOffset(e)
 				fn(e)
 			}

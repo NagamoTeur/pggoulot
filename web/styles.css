@@ -2249,3 +2249,6 @@
 .tr-finding-part { font-size: 0.8rem; line-height: 1.45; margin-top: 4px; }
 .tr-finding-label { display: inline-block; min-width: 9rem; font-weight: 600; color: var(--text-muted); margin-right: 6px; }
 .tr-check { white-space: pre-wrap; font-size: 0.72rem; margin: 4px 0 0; }
+
+/* --offline (fork): no button sends a plan out of the report */
+.ql-offline [onclick^="visualizePlan"], .ql-offline [onclick^="visualizeTracePlan"], .ql-offline .btn-explain { display: none !important; }

@@ -170,6 +170,7 @@ func runAnalysisCycle(ctx context.Context, args []string) error {
 		go parser.FilterStream(ctx, rawLogs, filteredLogs, filters)
 		analyzeInput = filteredLogs
 	}
+	analyzeInput = redactIfAsked(ctx, analyzeInput) // fork: --redact
 
 	// Analysis PID-shard count: > 1 only for large, uncompressed plain
 	// stderr. Decide it from the EXPANDED file list (allFiles), not the raw

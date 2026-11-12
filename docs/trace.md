@@ -57,6 +57,12 @@ compilation and conditions repeated in a filter. Everything is computed from the
 `--lang fr` (or `QUELLOG_LANG=fr`, or a French `LANG`) writes the traces in French, in every
 output; the rest of the report stays in English.
 
+## Personal data
+
+`--redact` masks quoted literals, bound parameters and constraint key values in every entry
+before the analysis, so neither the traces nor the rest of the report show them. `--offline`
+removes the HTML report's buttons that send a plan to explain.dalibo.com.
+
 ## Log formats
 
 stderr (and the syslog and cloud variants quellog reads), jsonlog and csvlog, plain or in

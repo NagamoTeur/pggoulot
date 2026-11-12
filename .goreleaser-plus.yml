@@ -1,0 +1,91 @@
+# Releases of quellog-plus, the fork (.goreleaser.yml stays the original
+# project's). Built by .github/workflows/release-plus.yml on a v*-plus.* tag.
+version: 2
+project_name: quellog-plus
+
+before:
+  hooks:
+    - go generate ./web/...
+
+builds:
+  - id: quellog-plus
+    binary: quellog-plus
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: quellog-plus
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+      - FORK.md
+      - SECURITY.md
+      - CHANGELOG.md
+      - docs/trace.md
+
+nfpms:
+  - id: quellog-plus
+    package_name: quellog-plus
+    vendor: NagamoTeur
+    homepage: https://github.com/NagamoTeur/quellog-plus
+    maintainer: NagamoTeur <25391072+NagamoTeur@users.noreply.github.com>
+    description: |-
+      Unofficial fork of quellog, the PostgreSQL log analyzer by Alain Lesage.
+      Adds slow statement traces with explained findings to every report.
+    license: PostgreSQL
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+    contents:
+      - src: LICENSE
+        dst: /usr/share/doc/quellog-plus/LICENSE
+      - src: README.md
+        dst: /usr/share/doc/quellog-plus/README.md
+      - src: FORK.md
+        dst: /usr/share/doc/quellog-plus/FORK.md
+      - src: SECURITY.md
+        dst: /usr/share/doc/quellog-plus/SECURITY.md
+      - src: CHANGELOG.md
+        dst: /usr/share/doc/quellog-plus/CHANGELOG.md
+      - src: docs/trace.md
+        dst: /usr/share/doc/quellog-plus/trace.md
+
+checksum:
+  name_template: checksums.txt
+
+sboms:
+  - artifacts: archive
+
+changelog:
+  disable: true
+
+release:
+  github:
+    owner: NagamoTeur
+    name: quellog-plus
+  draft: false
+  prerelease: false
+  header: |
+    Unofficial fork of [quellog](https://github.com/Alain-L/quellog). See [FORK.md](https://github.com/NagamoTeur/quellog-plus/blob/main/FORK.md) and the CHANGELOG.
+
+    Verify a download: `gh attestation verify <file> -R NagamoTeur/quellog-plus` and `sha256sum -c checksums.txt`.

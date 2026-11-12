@@ -631,7 +631,7 @@ function buildQueryDetailHTML(q, execs, tempEvents, lockQ, tempQ) {
 // (visualizePlan) and by the per-row eye button in the query table
 // (visualizePlanFor) — only the plan/sql/title source differs.
 export function explainDaliboFlow(plan, sql, idForTitle) {
-    if (!plan) return;
+    if (!plan || analysisData?.offline) return; // fork: --offline sends nothing out
     let overlay = document.getElementById('visualize-confirm');
     if (!overlay) {
         overlay = document.createElement('div');

@@ -1,0 +1,54 @@
+# Watches the original quellog: when its main branch has commits that are
+# not merged here yet, opens one issue listing them (or updates it).
+name: Upstream watch
+
+on:
+  schedule:
+    - cron: '41 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Compare with Alain-L/quellog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git remote add upstream https://github.com/Alain-L/quellog.git
+          git fetch -q --tags upstream main
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "Up to date with the original."
+            exit 0
+          fi
+          tag=$(git describe --tags --abbrev=0 upstream/main 2>/dev/null || echo "main")
+          {
+            echo "The original quellog has commits not merged here yet (latest tag: \`$tag\`)."
+            echo
+            echo '```'
+            git log --oneline --no-merges HEAD..upstream/main | head -50
+            echo '```'
+            echo
+            echo "To merge, then check that the regression corpus still passes:"
+            echo
+            echo '```bash'
+            echo 'git fetch upstream && git merge upstream/main'
+            echo 'go generate ./web/... && go test ./...'
+            echo '```'
+          } > body.md
+          title="Merge the original quellog ($tag)"
+          number=$(gh issue list --state open --label upstream --json number --jq '.[0].number')
+          gh label create upstream --color 0E8A16 --description "Changes from Alain-L/quellog" 2>/dev/null || true
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --title "$title" --body-file body.md
+          else
+            gh issue create --title "$title" --body-file body.md --label upstream
+          fi

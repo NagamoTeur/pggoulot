@@ -209,6 +209,8 @@ function harmonizeSummary() {
 }
 
 function renderResults(data, fileName, fileSize, isInitial = true) {
+    // Fork: --offline hides the buttons that send data to explain.dalibo.com.
+    document.documentElement.classList.toggle('ql-offline', !!data.offline);
     results.classList.add('active');
 
     // Clear previous chart data

@@ -14,6 +14,10 @@ import (
 // the compact block of the default report, writeTracesMarkdown the Markdown
 // form and convertTraces what JSON, YAML and the HTML report carry.
 
+// Offline (--offline) marks the HTML report so it hides the buttons that send
+// data to an outside service (the explain.dalibo.com Visualize buttons).
+var Offline bool
+
 // traceQuery is the query that ran, parameters substituted.
 func traceQuery(t *trace.Trace) string {
 	q := t.Query()

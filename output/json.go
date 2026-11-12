@@ -2168,6 +2168,9 @@ func buildJSONData(m analysis.AggregatedMetrics, sections []string, full bool) m
 	// It's only shown when --sql-overview flag is used (handled via early return in execute.go)
 	// or when --full flag is used (added at the end of this function).
 
+	if Offline {
+		data["offline"] = true
+	}
 	if has("traces") && len(m.Traces) > 0 {
 		data["traces"] = convertTraces(m)
 		data["traces_lang"] = trace.Lang()
