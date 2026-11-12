@@ -1,37 +1,39 @@
-# quellog-plus
+# pggoulot
 
-Fork non officiel de [quellog](https://github.com/Alain-L/quellog) (Alain Lesage, licence
-PostgreSQL), pensé pour l'exploitation : enquêter sur une requête lente sans faire de grep dans les
-journaux, et comprendre où est passé son temps. Sans lien avec le projet d'origine.
+Trouver le goulot d'étranglement d'une requête PostgreSQL lente, sans faire de grep dans les
+journaux. pggoulot est bâti sur [quellog](https://github.com/Alain-L/quellog) (Alain Lesage, licence
+PostgreSQL), dont il reprend tout le rapport, et y ajoute les traces des requêtes les plus lentes
+et leurs constats expliqués. Projet personnel, sans lien avec quellog ; la licence et le copyright
+d'origine sont conservés (`LICENSE`).
 
 ## Installer
 
-Les [releases](https://github.com/NagamoTeur/quellog-plus/releases) fournissent le binaire
-`quellog-plus` (Linux, macOS, Windows ; amd64 et arm64), des paquets `.deb` et `.rpm`, les sommes
+Les [releases](https://github.com/NagamoTeur/pggoulot/releases) fournissent le binaire
+`pggoulot` (Linux, macOS, Windows ; amd64 et arm64), des paquets `.deb` et `.rpm`, les sommes
 SHA-256 et la liste des composants (SBOM). Chaque fichier porte une attestation de provenance
 signée par GitHub, qui prouve qu'il a été construit par la CI de ce dépôt à partir du tag :
 
 ```bash
-gh attestation verify quellog-plus_0.13.0-plus.1_linux_amd64.deb -R NagamoTeur/quellog-plus
+gh attestation verify pggoulot_0.1.0_linux_amd64.deb -R NagamoTeur/pggoulot
 sha256sum -c --ignore-missing checksums.txt
-sudo apt install ./quellog-plus_0.13.0-plus.1_linux_amd64.deb
+sudo apt install ./pggoulot_0.1.0_linux_amd64.deb
 ```
 
-`quellog-plus` s'installe à côté de `quellog` sans le remplacer.
+`pggoulot` s'installe à côté de `quellog` sans le remplacer.
 
 ## Publier une version
 
-Ajouter la section de la version en tête du CHANGELOG (`## [0.13.0-plus.1] - date`), commiter,
-puis poser le tag :
+Ajouter la section de la version en tête du CHANGELOG (`## [0.1.0] - date`), commiter, puis poser
+le tag :
 
 ```bash
-git tag v0.13.0-plus.1 && git push origin v0.13.0-plus.1
+git tag v0.1.0 && git push origin v0.1.0
 ```
 
-`.github/workflows/release-plus.yml` relance alors tous les contrôles (tests avec détection de
+`.github/workflows/release-pggoulot.yml` relance alors tous les contrôles (tests avec détection de
 courses, tests JS, fuzzing, govulncheck, gosec, et la quality gate SonarQube si elle est
-configurée) ; s'ils passent, GoReleaser (`.goreleaser-plus.yml`) construit et publie la release,
-puis chaque fichier reçoit son attestation. La version suit celle de quellog : `0.13.0-plus.N`.
+configurée) ; s'ils passent, GoReleaser (`.goreleaser-pggoulot.yml`) construit et publie la release,
+puis chaque fichier reçoit son attestation. pggoulot a sa propre numérotation ; le CHANGELOG indique la version de quellog sur laquelle il est bâti.
 
 ## Chez un client
 
@@ -40,7 +42,7 @@ valeurs des erreurs de contrainte. Pour un rapport qui ne les montre pas et qui 
 de la machine :
 
 ```bash
-quellog-plus /var/log/postgresql/ --redact --offline --html --lang fr
+pggoulot /var/log/postgresql/ --redact --offline --html --lang fr
 ```
 
 `--redact` remplace les littéraux entre apostrophes, les paramètres et les valeurs des erreurs de

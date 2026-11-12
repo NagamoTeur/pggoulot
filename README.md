@@ -1,9 +1,10 @@
-> **quellog-plus** is an unofficial fork of [quellog](https://github.com/Alain-L/quellog) by Alain
-> Lesage. It adds slow statement traces with explained findings (in English or French) to every
-> report, and a few fixes. The binary and packages are named `quellog-plus`; the commands below work
-> the same. See [FORK.md](FORK.md) (in French), [docs/trace.md](docs/trace.md) and the
-> [releases](https://github.com/NagamoTeur/quellog-plus/releases). Not affiliated with the original
-> project: report fork-specific issues here.
+> **pggoulot** finds the bottleneck (*goulot d'étranglement*) of slow PostgreSQL statements. It is
+> built on [quellog](https://github.com/Alain-L/quellog), the log analyzer by Alain Lesage (PostgreSQL
+> License), and adds slow statement traces with explained findings, in English or French, to every
+> report. Unofficial and not affiliated with quellog: report pggoulot issues here. The binary and
+> packages are named `pggoulot`; the quellog commands below work the same. See [FORK.md](FORK.md)
+> (in French), [docs/trace.md](docs/trace.md) and the
+> [releases](https://github.com/NagamoTeur/pggoulot/releases).
 
 # quellog
 

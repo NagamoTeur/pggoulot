@@ -1,12 +1,12 @@
-# Release of quellog-plus: push a tag such as v0.13.0-plus.1. Every check
+# Release of pggoulot: push a tag such as v0.1.0. Every check
 # runs first; only then GoReleaser builds the binaries, archives, .deb and
 # .rpm packages, checksums and SBOMs, and each file gets a signed build
 # provenance attestation (gh attestation verify).
-name: Release quellog-plus
+name: Release pggoulot
 
 on:
   push:
-    tags: ['v*-plus.*']
+    tags: ['v*']
 
 permissions:
   contents: read
@@ -81,7 +81,7 @@ jobs:
         with:
           args: >
             -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
-            -Dsonar.projectKey=${{ vars.SONAR_ORGANIZATION }}_quellog
+            -Dsonar.projectKey=${{ vars.SONAR_ORGANIZATION }}_pggoulot
             -Dsonar.qualitygate.wait=true
 
   release:
@@ -109,7 +109,7 @@ jobs:
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean --config .goreleaser-plus.yml --release-notes /tmp/notes.md
+          args: release --clean --config .goreleaser-pggoulot.yml --release-notes /tmp/notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Provenance attestations

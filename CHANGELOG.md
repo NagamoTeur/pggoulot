@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - fork Nagamo
+## [Unreleased] - pggoulot (built on quellog 0.13.0)
 
 ### Added
 - `quellog trace`: follows the slowest statements through the logs (prepared text, parameters, own auto_explain plan, executor vs. client time, temp files of the backend and its parallel workers, timeline, query ready for EXPLAIN). See docs/trace.md.
@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file.
 - Traces work with stderr, syslog, jsonlog and csvlog, from files, archives or standard input; `quellog trace` reads the logs once.
 - **Explained findings, in English or French** (`--lang en|fr`, default from `QUELLOG_LANG` then `LANG`): each finding says what happened with its numbers, whether it matters (its share of the statement's time, from the plan tree), the read-only queries that confirm it and what to propose. Covers the transfer to the client (actual throughput), sorts and hashes spilled to disk (with a work_mem to try), scans that throw most rows away (index to propose, type casts that defeat it), misestimates, missing parallel workers, lock waits, JIT and repeated conditions. Computed from the logs only.
 - **`--redact`**: masks quoted literals, bound parameters and constraint key values (`Key (…)=(…)`, `Failing row contains (…)`) in every entry before the analysis, so no output shows them. `--offline`: the HTML report hides and disables the buttons that send a plan to explain.dalibo.com.
-- **quellog-plus**: the fork's binary and packages are named `quellog-plus` and install next to `quellog`. Releases on a `v*-plus.*` tag (`.github/workflows/release-plus.yml`, `.goreleaser-plus.yml`): every check first, then binaries for Linux, macOS and Windows, `.deb` and `.rpm`, checksums, SBOMs and signed build provenance attestations.
+- **pggoulot**: the project's binary and packages are named `pggoulot` and install next to `quellog`. Releases on a `v*` tag (`.github/workflows/release-pggoulot.yml`, `.goreleaser-pggoulot.yml`): every check first, then binaries for Linux, macOS and Windows, `.deb` and `.rpm`, checksums, SBOMs and signed build provenance attestations.
 - A weekly workflow opens an issue when the original quellog has changes not merged yet.
 - jsonlog and csvlog `leader_pid` is kept (`LogEntry.LeaderPID`): parallel workers are tied to their leader exactly.
 

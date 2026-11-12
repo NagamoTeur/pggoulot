@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   release:
-    # Fork: the original project's release; quellog-plus has release-plus.yml.
+    # Fork: the original project's release; pggoulot has release-pggoulot.yml.
     if: github.repository == 'Alain-L/quellog'
     runs-on: ubuntu-latest
     steps:

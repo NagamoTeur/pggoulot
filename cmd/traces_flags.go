@@ -22,6 +22,9 @@ var (
 )
 
 func init() {
+	// The command is installed as pggoulot: help and completion use that name.
+	rootCmd.Use = "pggoulot [files or dirs]"
+
 	// QUELLOG_TRACE_TOP sets the default: the regression corpus runs with 0 so
 	// it keeps checking that everything else matches the original quellog.
 	if v, err := strconv.Atoi(os.Getenv("QUELLOG_TRACE_TOP")); err == nil {

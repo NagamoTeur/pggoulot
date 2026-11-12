@@ -40,4 +40,4 @@ jobs:
         with:
           args: >
             -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
-            -Dsonar.projectKey=${{ vars.SONAR_ORGANIZATION }}_quellog
+            -Dsonar.projectKey=${{ vars.SONAR_ORGANIZATION }}_pggoulot
