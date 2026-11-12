@@ -18,7 +18,7 @@ All notable changes to this project will be documented in this file.
 - HTML report: `escForJsAttr` did not escape backslashes, so log text holding `\'` could leave the JavaScript string of a Copy button and run code when the report was opened (XSS). Backslashes and carriage returns are now escaped.
 - `--open` on Windows went through `cmd /C start`, which interprets `&` and `|` in the report's file name; it now uses `rundll32 url.dll,FileProtocolHandler`, without a shell.
 - Dependencies with known vulnerabilities updated: andybalholm/brotli 1.2.7, klauspost/compress 1.20.2, golang.org/x/text 0.41.0, golang.org/x/sys 0.44.0 (go.mod now requires Go 1.25).
-- CI: CodeQL, govulncheck, gosec, gitleaks, Trivy, OpenSSF Scorecard, optional SonarQube Cloud, fuzzing of the trace parsers; actions pinned by commit. `SECURITY.md`.
+- CI: CodeQL, Semgrep, gosec, govulncheck, OSV-Scanner, Trivy, gitleaks (whole history), zizmor, OpenSSF Scorecard, optional SonarQube Cloud, fuzzing of the parsers; every check gates the release; packages built on every push; actions pinned by commit, read-only permissions, no cache in releases. README with the status of each check (English and French). `SECURITY.md`.
 
 ### Fixed
 - A pending auto_explain plan is attached to the next timed statement of the backend only when its Query Text is that statement (an SQL EXECUTE matches its PREPARE).

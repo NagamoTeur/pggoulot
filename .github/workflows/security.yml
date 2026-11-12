@@ -1,6 +1,16 @@
-# Security checks: CodeQL (Go and JavaScript), govulncheck, gosec, gitleaks,
-# Trivy and, on pull requests, the dependency review. SARIF reports land in
-# the repository's Security tab.
+# Security checks. Every job blocks: a release only happens when all of them
+# pass (release-pggoulot.yml calls this workflow). SARIF reports land in the
+# repository's Security tab.
+#
+#   CodeQL         Go and JavaScript, security-extended queries
+#   govulncheck    known Go vulnerabilities in the code paths actually called
+#   OSV-Scanner    known vulnerabilities in every dependency (osv.dev)
+#   Trivy          fixable high/critical vulnerabilities, secrets, misconfigurations
+#   gosec          Go security rules (blocking on pggoulot's own packages)
+#   Semgrep        Go and JavaScript security rules, secrets, XSS
+#   gitleaks       secrets in the whole git history
+#   zizmor         security of the GitHub workflows themselves
+#   Dependency review (pull requests): new vulnerable or ill-licensed dependencies
 name: Security
 
 on:
@@ -10,12 +20,14 @@ on:
   schedule:
     - cron: '17 4 * * 1'
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
 
 jobs:
   codeql:
+    name: CodeQL (${{ matrix.language }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -37,6 +49,7 @@ jobs:
         if: matrix.language == 'go'
         with:
           go-version: '1.27.x'
+          cache: false
       - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
         with:
           languages: ${{ matrix.language }}
@@ -52,6 +65,7 @@ jobs:
           category: /language:${{ matrix.language }}
 
   govulncheck:
+    name: govulncheck
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -61,57 +75,31 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.27.x'
+          cache: false
       - name: Generate web assets
         run: go generate ./web/...
-      - name: Known vulnerabilities in the code paths
-        uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1.1.0
+      - uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1.1.0
         with:
           go-version-input: '1.27.x'
           go-package: ./...
+          cache: false
 
-  gosec:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      security-events: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: '1.27.x'
-      - name: Generate web assets
-        run: go generate ./web/...
-      # The fork's own packages must stay clean; the original code is
-      # reported in the Security tab without failing the build.
-      - name: gosec (fork code, blocking)
-        uses: securego/gosec@5eb1d104ef85ff2c905c877eb600e8c1dee33a22 # v2.30.0
-        with:
-          args: -quiet ./trace/...
-      - name: gosec (everything, report)
-        uses: securego/gosec@5eb1d104ef85ff2c905c877eb600e8c1dee33a22 # v2.30.0
-        with:
-          args: -quiet -no-fail -fmt sarif -out gosec.sarif ./...
-      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
-        with:
-          sarif_file: gosec.sarif
-          category: gosec
-
-  gitleaks:
+  osv-scanner:
+    name: OSV-Scanner
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
           persist-credentials: false
-      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: google/osv-scanner-action/osv-scanner-action@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
+        with:
+          scan-args: |-
+            --recursive
+            ./
 
   trivy:
+    name: Trivy
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -129,21 +117,122 @@ jobs:
           format: sarif
           output: trivy.sarif
           skip-dirs: node_modules,test/testdata,trace/testdata
+          cache: false
       - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
         with:
           sarif_file: trivy.sarif
           category: trivy
-      - name: Trivy (fixable high and critical vulnerabilities, blocking)
+      - name: Trivy (fixable high and critical, blocking)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
-          scanners: vuln
+          scanners: vuln,secret
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: '1'
+          skip-dirs: node_modules,test/testdata,trace/testdata
           skip-setup-trivy: true
+          cache: false
+
+  gosec:
+    name: gosec
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.x'
+          cache: false
+      - name: Install gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@v2.30.0
+      - name: Generate web assets
+        run: go generate ./web/...
+      # pggoulot's own packages must stay clean; the inherited quellog code is
+      # reported in the Security tab (unchecked writes, numeric conversions,
+      # MD5 used as an ID) without failing the build.
+      - name: gosec (pggoulot packages, blocking)
+        run: gosec -quiet ./trace/...
+      - name: gosec (everything, report)
+        run: gosec -quiet -no-fail -fmt sarif -out gosec.sarif ./...
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
+        with:
+          sarif_file: gosec.sarif
+          category: gosec
+
+  semgrep:
+    name: Semgrep
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    container:
+      image: semgrep/semgrep:1.185.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Rules left out, after review: MD5 only builds query IDs; JSON is
+      # decoded into interface{} from the file the user passes, to detect its
+      # format; the Express HTML rule targets servers (the report's JS escapes
+      # every value with esc(), and CodeQL covers DOM XSS).
+      - name: Semgrep
+        run: >
+          semgrep scan --error --metrics=off
+          --config p/golang --config p/javascript --config p/secrets --config p/xss
+          --exclude-rule go.lang.security.audit.crypto.use_of_weak_crypto.use-of-md5
+          --exclude-rule go.lang.security.deserialization.unsafe-deserialization-interface.go-unsafe-deserialization-interface
+          --exclude-rule javascript.express.security.injection.raw-html-format.raw-html-format
+          --exclude 'web/app.bundle.js' --exclude '*.min.js' --exclude testdata
+          --exclude web/wasm_exec_tiny.js
+          --sarif-output semgrep.sarif
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.x'
+          cache: false
+      - name: Secrets in the whole history
+        run: |
+          go install github.com/zricethezav/gitleaks/v8@v8.30.1
+          gitleaks git --redact --no-banner .
+
+  zizmor:
+    name: zizmor
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: zizmorcore/zizmor-action@45d7276c9ca790aabd705e31ca99c6185c3e76dd # v0.8.1
+        with:
+          version: 1.32.0
 
   dependency-review:
+    name: Dependency review
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:

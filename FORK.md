@@ -31,7 +31,7 @@ git tag v0.1.0 && git push origin v0.1.0
 ```
 
 `.github/workflows/release-pggoulot.yml` relance alors tous les contrôles (tests avec détection de
-courses, tests JS, fuzzing, govulncheck, gosec, et la quality gate SonarQube si elle est
+courses, tests JS, fuzzing, tout `security.yml`, et la quality gate SonarQube si elle est
 configurée) ; s'ils passent, GoReleaser (`.goreleaser-pggoulot.yml`) construit et publie la release,
 puis chaque fichier reçoit son attestation. pggoulot a sa propre numérotation ; le CHANGELOG indique la version de quellog sur laquelle il est bâti.
 
@@ -108,8 +108,10 @@ go test ./...
 go build .
 ```
 
-La CI (`.github/workflows/`) lance les tests, le détecteur de courses, le fuzzing des traces,
-golangci-lint, govulncheck, gosec, CodeQL et gitleaks, et vérifie que le module WASM compile.
+La CI (`.github/workflows/`) lance à chaque push : tests (détection de courses, corpus de
+régression, tests JS, compilation WASM TinyGo), fuzzing et golangci-lint, les contrôles de sécurité
+(CodeQL, Semgrep, gosec, govulncheck, OSV-Scanner, Trivy, gitleaks, zizmor) et la construction des
+paquets, joints au run pendant 30 jours. Le README affiche l'état de chaque contrôle.
 
 ## Sécurité
 

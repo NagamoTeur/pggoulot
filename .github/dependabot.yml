@@ -1,12 +1,12 @@
 version: 2
 updates:
+  # Go: security updates only (enabled in the repository settings). Routine
+  # updates often need a newer Go than TinyGo accepts for the WASM demo.
   - package-ecosystem: gomod
     directory: /
     schedule:
       interval: weekly
-    groups:
-      go:
-        patterns: ['*']
+    open-pull-requests-limit: 0
   - package-ecosystem: github-actions
     directory: /
     schedule:
