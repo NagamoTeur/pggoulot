@@ -17,10 +17,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           # Pinned above go.mod's minimum: the release binaries embed the
           # standard library, so they must be built with a supported Go.
@@ -28,7 +28,7 @@ jobs:
           go-version: '1.27.x'
 
       - name: Cache Go build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cache/go-build
@@ -68,7 +68,7 @@ jobs:
       # its own Go — the one docs.yml builds the published demo with. 1.25:
       # go.mod requires it since klauspost/compress 1.20 (fork).
       - name: Setup Go for TinyGo
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: '1.25'
 
@@ -89,7 +89,7 @@ jobs:
       # — are for bundling and the local-only visual harness), and this repo does
       # not track package-lock.json, so there is nothing to `npm ci`.
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           # 24, not 22: the unit tests exercise Intl.DurationFormat (the module's
           # preferred path; it has a fallback for older engines), which the
