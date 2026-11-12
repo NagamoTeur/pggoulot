@@ -598,7 +598,7 @@ func isSQLStateAt(msg string, i int) bool {
 		return false
 	}
 	for _, c := range []byte(msg[i : i+5]) {
-		if !(c >= '0' && c <= '9' || c >= 'A' && c <= 'Z') {
+		if (c < '0' || c > '9') && (c < 'A' || c > 'Z') {
 			return false
 		}
 	}

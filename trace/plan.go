@@ -288,7 +288,7 @@ func filterColumns(n *Node) []string {
 // duplicateConjuncts finds a top-level AND term repeated in a Filter or Cond.
 func duplicateConjuncts(d string) string {
 	i := strings.Index(d, ": ")
-	if i < 0 || !(strings.HasPrefix(d, "Filter") || strings.HasSuffix(d[:i], "Cond")) {
+	if i < 0 || (!strings.HasPrefix(d, "Filter") && !strings.HasSuffix(d[:i], "Cond")) {
 		return ""
 	}
 	expr := strings.TrimSpace(d[i+2:])
