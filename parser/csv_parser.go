@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -35,6 +36,7 @@ const (
 	csvFieldQueryPos      = 20 // query_pos
 	csvFieldLocation      = 21 // location
 	csvFieldAppName       = 22 // application_name
+	csvFieldLeaderPID     = 24 // leader_pid (PostgreSQL >= 13)
 )
 
 // CsvParser parses PostgreSQL logs in CSV format.
@@ -135,7 +137,11 @@ func (p *CsvParser) parseScanner(sc *csvScanner, out chan<- []LogEntry) error {
 		// Build complete message with context
 		message := p.buildCSVMessage(record)
 
-		bs.Send(NewLogEntry(timestamp, message, false))
+		entry := NewLogEntry(timestamp, message, false)
+		if leader := record.field(csvFieldLeaderPID); leader.raw != "" {
+			entry.LeaderPID = strings.Clone(leader.raw)
+		}
+		bs.Send(entry)
 	}
 
 	return nil

@@ -23,7 +23,10 @@ func openInBrowser(path string) {
 	case "darwin":
 		cmd = exec.Command("open", path)
 	case "windows":
-		cmd = exec.Command("cmd", "/C", "start", "", path)
+		// Not "cmd /C start": cmd.exe would interpret & | ^ in the file name
+		// (a log named "x&calc.log" would run calc). rundll32 takes the path
+		// as a plain argument.
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", path)
 	default:
 		cmd = exec.Command("xdg-open", path)
 	}

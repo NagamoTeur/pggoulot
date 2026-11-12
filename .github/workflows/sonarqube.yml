@@ -1,0 +1,43 @@
+# SonarQube Cloud (free for public repositories). Runs once the repository
+# has a SONAR_TOKEN secret and a SONAR_ORGANIZATION variable; skipped before.
+name: SonarQube
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sonarqube:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Configured?
+        id: configured
+        run: echo "ok=${{ env.SONAR_TOKEN != '' && vars.SONAR_ORGANIZATION != '' }}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.configured.outputs.ok == 'true'
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        if: steps.configured.outputs.ok == 'true'
+        with:
+          go-version: '1.27.x'
+      - name: Coverage
+        if: steps.configured.outputs.ok == 'true'
+        run: |
+          go generate ./web/...
+          go test -coverprofile=coverage.out ./...
+      - uses: SonarSource/sonarqube-scan-action@e805d875275f728fac1885b413934be6d7c63f65 # v8.4.1
+        if: steps.configured.outputs.ok == 'true'
+        with:
+          args: >
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+            -Dsonar.projectKey=${{ vars.SONAR_ORGANIZATION }}_quellog

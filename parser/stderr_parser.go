@@ -3,6 +3,7 @@ package parser
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"math"
@@ -340,6 +341,7 @@ func (p *StderrParser) parseReader(r io.Reader, out chan<- []LogEntry) error {
 	scanner.Buffer(p.scannerBuf(), math.MaxInt32)
 
 	currentEntry := make([]byte, 0, 8192)
+	keepLines, hasCont := false, false
 
 	for scanner.Scan() {
 		lineBytes := scanner.Bytes()
@@ -360,11 +362,12 @@ func (p *StderrParser) parseReader(r io.Reader, out chan<- []LogEntry) error {
 		}
 
 		if isContinuation {
-			if len(currentEntry) > 0 {
-				currentEntry = append(currentEntry, ' ')
+			if !hasCont {
+				keepLines, hasCont = PreserveContinuationNewlines || isPlanHead(currentEntry), true
 			}
-			currentEntry = append(currentEntry, trimSpaceBytes(lineBytes)...)
+			currentEntry = appendContinuation(currentEntry, lineBytes, keepLines)
 		} else {
+			hasCont = false
 			if len(currentEntry) > 0 {
 				timestamp, message := p.parseEntryFromBytes(currentEntry)
 				if !timestamp.IsZero() {
@@ -414,6 +417,7 @@ func (p *StderrParser) parseFromBytes(data []byte, out chan<- []LogEntry) error 
 	entryStart := -1 // start offset of the current entry's first line in `data`
 	entryEnd := -1   // end offset (exclusive) of the current entry's first line in `data`
 	hasCont := false // continuations seen for the current entry
+	keepLines := false
 
 	emit := func() {
 		var entryBytes []byte
@@ -479,11 +483,9 @@ func (p *StderrParser) parseFromBytes(data []byte, out chan<- []LogEntry) error 
 					currentEntry = currentEntry[:0]
 				}
 				hasCont = true
+				keepLines = PreserveContinuationNewlines || isPlanHead(currentEntry)
 			}
-			if len(currentEntry) > 0 {
-				currentEntry = append(currentEntry, ' ')
-			}
-			currentEntry = append(currentEntry, trimSpaceBytes(lineBytes)...)
+			currentEntry = appendContinuation(currentEntry, lineBytes, keepLines)
 		} else {
 			// Emit previous entry if any.
 			if entryStart >= 0 || hasCont {
@@ -499,6 +501,7 @@ func (p *StderrParser) parseFromBytes(data []byte, out chan<- []LogEntry) error 
 				entryEnd = -1
 				currentEntry = append(currentEntry[:0], lineBytes...)
 				hasCont = true
+				keepLines = PreserveContinuationNewlines || isPlanHead(currentEntry)
 			} else {
 				entryStart = origLineStart
 				entryEnd = origLineEnd
@@ -612,6 +615,36 @@ func hasTimestampBytes(line []byte) bool {
 		return true
 	}
 	return false
+}
+
+// PreserveContinuationNewlines keeps the line structure of every multi-line
+// message (long queries included): continuation lines are joined with '\n'
+// and keep their indentation instead of being flattened onto one line. Off by
+// default because the analyzers expect flat messages. auto_explain plans keep
+// their lines either way (see isPlanHead), as jsonlog and csvlog give them.
+var PreserveContinuationNewlines bool
+
+// isPlanHead reports whether an entry is the first line of an auto_explain
+// plan ("… duration: 2105.000 ms  plan:"). Its continuation lines are the
+// plan, whose indentation is the tree: flattening it would lose the tree.
+func isPlanHead(entry []byte) bool {
+	entry = bytes.TrimRight(entry, " \t\r")
+	return bytes.HasSuffix(entry, []byte(" plan:"))
+}
+
+// appendContinuation appends a continuation line to the entry being built,
+// with a newline when keepLines is set, else flattened onto one line.
+func appendContinuation(entry, line []byte, keepLines bool) []byte {
+	if keepLines {
+		for len(line) > 0 && line[len(line)-1] == '\r' {
+			line = line[:len(line)-1]
+		}
+		return append(append(entry, '\n'), line...)
+	}
+	if len(entry) > 0 {
+		entry = append(entry, ' ')
+	}
+	return append(entry, trimSpaceBytes(line)...)
 }
 
 func trimSpaceBytes(b []byte) []byte {

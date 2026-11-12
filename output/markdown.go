@@ -82,6 +82,11 @@ func ExportMarkdown(w io.Writer, m analysis.AggregatedMetrics, sections []string
 	// ============================================================================
 	// EVENTS
 	// ============================================================================
+	// Slowest statements traced (fork)
+	if has("traces") && len(m.Traces) > 0 {
+		writeTracesMarkdown(&b, m.Traces, full || !has("all"))
+	}
+
 	if (has("events") || has("errors")) && len(m.EventSummaries) > 0 {
 		b.WriteString("## EVENTS\n\n")
 

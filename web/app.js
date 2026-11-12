@@ -48,6 +48,7 @@ import {
 } from './js/sections/maintenance.js';
 import { buildLocksSection } from './js/sections/locks.js';
 import { buildTempFilesSection } from './js/sections/tempfiles.js';
+import { buildTracesSection, showTraceModal, visualizeTracePlan } from './js/sections/traces.js';
 import {
     buildSQLOverviewSection, buildSQLPerformanceSection, showSqlOvView,
     setSqlOverviewData, highlightQuery
@@ -255,6 +256,9 @@ function renderResults(data, fileName, fileSize, isInitial = true) {
 
     // SQL Performance (full width)
     html += buildSQLPerformanceSection(data);
+
+    // Slowest statements traced (full width, fork)
+    html += buildTracesSection(data);
 
     // Row 5: Checkpoints | Temp Files
     html += '<div class="grid grid-2">';
@@ -533,6 +537,8 @@ if (!window.decompressData) {
     };
 }
 window.showQueryModal = showQueryModal;
+window.showTraceModal = showTraceModal;
+window.visualizeTracePlan = visualizeTracePlan;
 window.highlightQuery = highlightQuery;
 window.visualizePlan = visualizePlan;
 window.visualizePlanFor = visualizePlanFor;

@@ -1,0 +1,57 @@
+2026-11-12 17:22:34 UTC [83] 00000: db=appdb,user=app_user,app=psql,client=172.17.0.1 LOG:  duration: 3012.114 ms  plan:
+	Query Text: SELECT * FROM "ORDER_LINES" WHERE load_ref = '00091505';
+	Seq Scan on "ORDER_LINES"  (cost=0.00..117661.00 rows=248 width=36) (actual time=3.010..3011.950 rows=121 loops=1)
+	  Filter: ((load_ref)::text = '00091505'::text)
+	  Rows Removed by Filter: 6184449
+2026-11-12 17:22:36 UTC [86] 00000: db=,user=,app=,client= LOG:  temporary file: path "base/pgsql_tmp/pgsql_tmp86.0", size 98172928
+2026-11-12 17:22:36 UTC [86] 00000: db=,user=,app=,client= STATEMENT:  PREPARE qpsqlpstmt_1001 AS SELECT * FROM "SHIPMENTS"
+	  WHERE (SITE_ID=$1 OR SITE_ID=$2 OR SITE_ID=$3) AND (SITE_ID=$4 OR SITE_ID=$5 OR SITE_ID=$6) AND PREP_MODE=$7
+	  ORDER BY ROUTE_ID, SHIPMENT_ID;
+2026-11-12 17:22:36 UTC [87] 00000: db=,user=,app=,client= LOG:  temporary file: path "base/pgsql_tmp/pgsql_tmp87.0", size 123887616
+2026-11-12 17:22:36 UTC [87] 00000: db=,user=,app=,client= STATEMENT:  PREPARE qpsqlpstmt_1001 AS SELECT * FROM "SHIPMENTS"
+	  WHERE (SITE_ID=$1 OR SITE_ID=$2 OR SITE_ID=$3) AND (SITE_ID=$4 OR SITE_ID=$5 OR SITE_ID=$6) AND PREP_MODE=$7
+	  ORDER BY ROUTE_ID, SHIPMENT_ID;
+2026-11-12 17:22:36 UTC [88] 00000: db=,user=,app=,client= LOG:  temporary file: path "base/pgsql_tmp/pgsql_tmp88.0", size 113598464
+2026-11-12 17:22:36 UTC [88] 00000: db=,user=,app=,client= STATEMENT:  PREPARE qpsqlpstmt_1001 AS SELECT * FROM "SHIPMENTS"
+	  WHERE (SITE_ID=$1 OR SITE_ID=$2 OR SITE_ID=$3) AND (SITE_ID=$4 OR SITE_ID=$5 OR SITE_ID=$6) AND PREP_MODE=$7
+	  ORDER BY ROUTE_ID, SHIPMENT_ID;
+2026-11-12 17:22:36 UTC [85] 00000: db=,user=,app=,client= LOG:  temporary file: path "base/pgsql_tmp/pgsql_tmp85.0", size 184057856
+2026-11-12 17:22:36 UTC [85] 00000: db=,user=,app=,client= STATEMENT:  PREPARE qpsqlpstmt_1001 AS SELECT * FROM "SHIPMENTS"
+	  WHERE (SITE_ID=$1 OR SITE_ID=$2 OR SITE_ID=$3) AND (SITE_ID=$4 OR SITE_ID=$5 OR SITE_ID=$6) AND PREP_MODE=$7
+	  ORDER BY ROUTE_ID, SHIPMENT_ID;
+2026-11-12 17:22:36 UTC [84] 00000: db=,user=,app=,client= LOG:  temporary file: path "base/pgsql_tmp/pgsql_tmp84.0", size 203579392
+2026-11-12 17:22:36 UTC [84] 00000: db=,user=,app=,client= STATEMENT:  PREPARE qpsqlpstmt_1001 AS SELECT * FROM "SHIPMENTS"
+	  WHERE (SITE_ID=$1 OR SITE_ID=$2 OR SITE_ID=$3) AND (SITE_ID=$4 OR SITE_ID=$5 OR SITE_ID=$6) AND PREP_MODE=$7
+	  ORDER BY ROUTE_ID, SHIPMENT_ID;
+2026-11-12 17:22:36 UTC [83] 00000: db=appdb,user=app_user,app=psql,client=172.17.0.1 LOG:  duration: 2118.349 ms  plan:
+	Query Text: PREPARE qpsqlpstmt_1001 AS SELECT * FROM "SHIPMENTS"
+	  WHERE (SITE_ID=$1 OR SITE_ID=$2 OR SITE_ID=$3) AND (SITE_ID=$4 OR SITE_ID=$5 OR SITE_ID=$6) AND PREP_MODE=$7
+	  ORDER BY ROUTE_ID, SHIPMENT_ID;
+	Query Parameters: $1 = '1', $2 = '2', $3 = '3', $4 = '1', $5 = '2', $6 = '3', $7 = '1'
+	Gather Merge  (cost=234212.85..309985.31 rows=626608 width=704) (actual time=744.040..1375.802 rows=1350000 loops=1)
+	  Workers Planned: 5
+	  Workers Launched: 5
+	  ->  Sort  (cost=233212.77..233526.08 rows=125322 width=704) (actual time=637.515..739.611 rows=225000 loops=6)
+	        Sort Key: route_id, shipment_id
+	        Sort Method: external merge  Disk: 237080kB
+	        Worker 0:  Sort Method: external merge  Disk: 110936kB
+	        Worker 1:  Sort Method: external merge  Disk: 120984kB
+	        Worker 2:  Sort Method: external merge  Disk: 95872kB
+	        Worker 3:  Sort Method: external merge  Disk: 179744kB
+	        Worker 4:  Sort Method: external merge  Disk: 198808kB
+	        ->  Parallel Seq Scan on "SHIPMENTS"  (cost=0.00..144634.96 rows=125322 width=704) (actual time=5.356..88.408 rows=225000 loops=6)
+	              Filter: ((prep_mode = 1) AND ((site_id = 1) OR (site_id = 2) OR (site_id = 3)) AND ((site_id = 1) OR (site_id = 2) OR (site_id = 3)))
+	              Rows Removed by Filter: 25000
+	JIT:
+	  Functions: 12
+	  Options: Inlining false, Optimization false, Expressions true, Deforming true
+	  Timing: Generation 1.174 ms (Deform 0.298 ms), Inlining 0.000 ms, Optimization 1.171 ms, Emission 22.621 ms, Total 24.967 ms
+2026-11-12 17:22:36 UTC [83] 00000: db=appdb,user=app_user,app=psql,client=172.17.0.1 LOG:  temporary file: path "base/pgsql_tmp/pgsql_tmp83.0", size 242769920
+2026-11-12 17:22:36 UTC [83] 00000: db=appdb,user=app_user,app=psql,client=172.17.0.1 STATEMENT:  EXECUTE qpsqlpstmt_1001 (1, 2, 3, 1, 2, 3, 1);
+2026-11-12 17:26:22 UTC [83] 00000: db=appdb,user=app_user,app=psql,client=172.17.0.1 LOG:  temporary file: path "base/pgsql_tmp/pgsql_tmp83.1", size 963900000
+2026-11-12 17:26:22 UTC [83] 00000: db=appdb,user=app_user,app=psql,client=172.17.0.1 STATEMENT:  EXECUTE qpsqlpstmt_1001 (1, 2, 3, 1, 2, 3, 1);
+2026-11-12 17:26:22 UTC [83] 00000: db=appdb,user=app_user,app=psql,client=172.17.0.1 LOG:  duration: 228013.837 ms  statement: EXECUTE qpsqlpstmt_1001 (1, 2, 3, 1, 2, 3, 1);
+2026-11-12 17:26:22 UTC [83] 00000: db=appdb,user=app_user,app=psql,client=172.17.0.1 DETAIL:  prepare: PREPARE qpsqlpstmt_1001 AS SELECT * FROM "SHIPMENTS"
+	  WHERE (SITE_ID=$1 OR SITE_ID=$2 OR SITE_ID=$3) AND (SITE_ID=$4 OR SITE_ID=$5 OR SITE_ID=$6) AND PREP_MODE=$7
+	  ORDER BY ROUTE_ID, SHIPMENT_ID;
+2026-11-12 17:27:00 UTC [62] 00000: db=,user=,app=,client= LOG:  checkpoint complete: wrote 2047 buffers (12.5%); 0 WAL file(s) added, 0 removed, 33 recycled; write=269.312 s, sync=0.002 s, total=269.456 s; sync files=29, longest=0.001 s, average=0.001 s; distance=543731 kB, estimate=543731 kB; lsn=0/671064B8, redo lsn=0/64402660

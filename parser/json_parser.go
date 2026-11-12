@@ -218,6 +218,7 @@ type effectiveFields struct {
 	query       string
 	context     string
 	textPayload string
+	leaderPID   string
 }
 
 // extractFromResult resolves the CNPG envelope (if any) and produces
@@ -236,7 +237,9 @@ func (p *JsonParser) extractFromResult(root gjson.Result) (LogEntry, error) {
 	if message == "" {
 		return LogEntry{}, fmt.Errorf("message extraction failed: no message content")
 	}
-	return NewLogEntry(timestamp, message, false), nil
+	entry := NewLogEntry(timestamp, message, false)
+	entry.LeaderPID = fields.leaderPID
+	return entry, nil
 }
 
 // resolveFields detects CNPG envelopes (direct or fluentd-wrapped) and
@@ -330,6 +333,7 @@ func fieldsFromRecordResult(r gjson.Result) effectiveFields {
 		hint:       r.Get("hint").String(),
 		query:      query,
 		context:    r.Get("context").String(),
+		leaderPID:  r.Get("leader_pid").String(),
 	}
 }
 
@@ -372,6 +376,7 @@ func fieldsFromTopLevel(r gjson.Result) effectiveFields {
 		query:       query,
 		context:     r.Get("context").String(),
 		textPayload: r.Get("textPayload").String(),
+		leaderPID:   r.Get("leader_pid").String(),
 	}
 }
 

@@ -63,6 +63,20 @@ func PrintMetrics(m analysis.AggregatedMetrics, sections []string, full bool) {
 		PrintSQLSummary(m.SQL, true)
 	}
 
+	// Slowest statements traced (fork): compact in the default report, the
+	// full trace with --traces or --full.
+	if has("traces") && len(m.Traces) > 0 {
+		if full || !has("all") {
+			fmt.Printf("%s\nSLOWEST STATEMENTS TRACED%s\n", bold, reset)
+			for _, t := range m.Traces {
+				fmt.Println()
+				RenderTrace(os.Stdout, t, bold != "")
+			}
+		} else {
+			printTracesSummary(os.Stdout, m.Traces, bold, reset)
+		}
+	}
+
 	// Events
 	if has("events") && len(m.EventSummaries) > 0 {
 		PrintEventsReport(m.EventSummaries, m.TopEvents, false)

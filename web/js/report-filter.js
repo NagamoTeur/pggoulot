@@ -747,6 +747,15 @@ export function applyReportTimeFilter(beginStr, endStr) {
         );
     }
 
+    // Traces (fork): keep those that ran in the range. They stay the slowest
+    // of the whole log; the section says so.
+    if (originalData.traces) {
+        filtered.traces = originalData.traces.filter(t => {
+            const s = parseTimestamp(t.start), e = parseTimestamp(t.end);
+            return s && e && s <= endDate && e >= beginDate;
+        });
+    }
+
     // Filter checkpoint events
     if (originalData.checkpoints?.events) {
         const filteredEvents = filterEventsByTime(

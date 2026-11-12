@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Alain-L/quellog/parser"
+	"github.com/Alain-L/quellog/trace"
 )
 
 // GlobalMetrics aggregates general statistics from PostgreSQL logs.
@@ -62,6 +63,9 @@ type AggregatedMetrics struct {
 	TopEvents      []EventStat
 	SQL            SQLMetrics
 	Server         ServerMetrics
+	// Traces are the slowest statements followed through the logs (plan,
+	// parameters, temp files, timeline), slowest first. See TraceOptions.
+	Traces []*trace.Trace
 }
 
 // StreamingAnalyzer orchestrates the ten specialized analyzers in
@@ -110,6 +114,7 @@ type StreamingAnalyzer struct {
 	connections *ConnectionAnalyzer
 	locks       *LockAnalyzer
 	tempFiles   *TempFileAnalyzer
+	tracer      *trace.Tracer
 
 	// One channel per consumer goroutine; ProcessBatch broadcasts each batch to
 	// all of them and the last consumer to release recycles it.
@@ -138,6 +143,7 @@ func NewStreamingAnalyzerWithWorkers(workers int) *StreamingAnalyzer {
 		connections: NewConnectionAnalyzer(),
 		locks:       NewLockAnalyzer(),
 		tempFiles:   NewTempFileAnalyzer(),
+		tracer:      trace.NewTracer(TraceOptions),
 	}
 	for k := range sa.shards {
 		sa.shards[k] = newAnalyzerShard()
@@ -168,6 +174,9 @@ func NewStreamingAnalyzerWithWorkers(workers int) *StreamingAnalyzer {
 	start(func(sb *sharedBatch) { forEach(sb, sa.connections.Process) })
 	start(func(sb *sharedBatch) { forEach(sb, sa.locks.Process) })
 	start(func(sb *sharedBatch) { forEach(sb, sa.tempFiles.Process) })
+	if TraceOptions.Top > 0 {
+		start(func(sb *sharedBatch) { forEach(sb, sa.tracer.Process) })
+	}
 
 	if workers == 1 {
 		// Function-parallel: the single shard's seven analyzers, split so the
@@ -292,6 +301,7 @@ func (sa *StreamingAnalyzer) Finalize() AggregatedMetrics {
 		UniqueEntities: merged.uniqueEntities.Finalize(),
 		SQL:            sql,
 		Server:         merged.server.Finalize(),
+		Traces:         sa.tracer.Finalize(),
 	}
 }
 

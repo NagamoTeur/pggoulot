@@ -27,6 +27,10 @@ type LogEntry struct {
 	// populated once at construction so the eight analyzers don't each
 	// re-parse the prefix. Empty if not extractable.
 	PID string
+	// LeaderPID is the PID of the parallel group leader when the entry was
+	// logged by a parallel worker (csvlog and jsonlog leader_pid; stderr
+	// has no labelled equivalent). Empty otherwise.
+	LeaderPID string
 	// Seq is a monotonic stream position assigned by the analysis
 	// dispatcher before PID-sharding. Analyzers that build ordered
 	// per-occurrence event slices stamp it onto each event so the

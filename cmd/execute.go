@@ -47,6 +47,9 @@ func executeParsing(cmd *cobra.Command, args []string) error {
 	if err := validateFlagCombinations(); err != nil {
 		return err
 	}
+	if err := applyTraceFlags(); err != nil {
+		return err
+	}
 
 	if !followFlag {
 		return runAnalysisCycle(ctx, args)
@@ -948,6 +951,9 @@ func buildSectionList() []string {
 	}
 	if serverFlag {
 		sections = append(sections, "server")
+	}
+	if tracesFlag {
+		sections = append(sections, "traces")
 	}
 
 	// If no specific sections selected, show all

@@ -30,6 +30,9 @@ var harnessBinary string
 // to work — they are independent and we do not interfere with their path.
 func TestMain(m *testing.M) {
 	flag.Parse()
+	// Fork: the goldens are the original quellog's output, so the slow
+	// statement traces (tested in trace/ and output/) stay off here.
+	os.Setenv("QUELLOG_TRACE_TOP", "0")
 
 	tmpDir, err := os.MkdirTemp("", "quellog-harness-*")
 	if err != nil {

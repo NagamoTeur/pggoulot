@@ -11,6 +11,7 @@ import {
 import { parseSizeToBytes } from '../format.js';
 import { analysisData, modalCharts, modalChartsData, incrementModalChartCounter } from '../state.js';
 import { createTimeChart, createCombinedSQLChart } from '../charts.js';
+import { buildQueryTracesHTML } from './traces.js';
 
 // --- Modal navigation (Event ↔ Query) -----------------------
 // modalStack tracks the trail of cross-modal navigations so the
@@ -599,6 +600,9 @@ function buildQueryDetailHTML(q, execs, tempEvents, lockQ, tempQ) {
         html += '</div>';
     }
 
+    // Fork: the runs of this query that were traced.
+    if (q?.id) html += buildQueryTracesHTML(q.id);
+
     // EXECUTION PLAN section (from auto_explain)
     if (q?.plan) {
         html += '<div class="qd-section">';
@@ -626,7 +630,7 @@ function buildQueryDetailHTML(q, execs, tempEvents, lockQ, tempQ) {
 // Used both by the Visualize button inside the Query Detail modal
 // (visualizePlan) and by the per-row eye button in the query table
 // (visualizePlanFor) — only the plan/sql/title source differs.
-function explainDaliboFlow(plan, sql, idForTitle) {
+export function explainDaliboFlow(plan, sql, idForTitle) {
     if (!plan) return;
     let overlay = document.getElementById('visualize-confirm');
     if (!overlay) {

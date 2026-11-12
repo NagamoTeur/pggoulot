@@ -682,8 +682,9 @@ type SQLAnalyzer struct {
 
 	// pendingPlanByPID stores auto_explain plan text temporarily, keyed by PID.
 	// When a plan: entry arrives, we store it here. When the subsequent
-	// statement: entry arrives for the same PID, we attach the plan to the query.
-	pendingPlanByPID map[string]string
+	// statement: entry arrives for the same PID, we attach the plan to the query
+	// — only when the plan's Query Text is that statement (see planBelongsTo).
+	pendingPlanByPID map[string]pendingPlan
 
 	// pendingExecByPID stores the latest execute: per PID, waiting for an
 	// optional "DETAIL: parameters:" continuation on the same backend.
@@ -729,7 +730,7 @@ func NewSQLAnalyzerWithSize(inputBytes int64) *SQLAnalyzer {
 		queryTypesByUser:     make(map[string]map[string]*QueryTypeCount),
 		queryTypesByHost:     make(map[string]map[string]*QueryTypeCount),
 		queryTypesByApp:      make(map[string]map[string]*QueryTypeCount),
-		pendingPlanByPID:     make(map[string]string),
+		pendingPlanByPID:     make(map[string]pendingPlan),
 		pendingExecByPID:     make(map[string]pendingExec),
 	}
 }
@@ -811,8 +812,9 @@ func (a *SQLAnalyzer) Process(entry *parser.LogEntry) {
 		if !strings.Contains(rest, "statement:") && !strings.Contains(rest, "execute") {
 			pid := entry.PID
 			if pid != "" {
+				msg := flattenKeptPlan(msg) // fork: stderr plans now keep their lines
 				if plan := extractPlanText(msg); plan != "" {
-					a.pendingPlanByPID[pid] = plan
+					a.pendingPlanByPID[pid] = pendingPlan{plan: plan, queryText: extractPlanQueryText(msg)}
 				}
 			}
 			return
@@ -891,9 +893,13 @@ func (a *SQLAnalyzer) Process(entry *parser.LogEntry) {
 	// Associate pending auto_explain plan (same PID, arrived just before)
 	pid := entry.PID
 	if pid != "" {
-		if plan, hasPlan := a.pendingPlanByPID[pid]; hasPlan {
-			stats.LastPlan = plan
-			stats.lastPlanSeq = entry.Seq
+		if pp, hasPlan := a.pendingPlanByPID[pid]; hasPlan {
+			// A plan left by a statement too fast for log_min_duration_statement
+			// stays pending on the backend: never pin it on the next one.
+			if planBelongsTo(pp.queryText, query) {
+				stats.LastPlan = pp.plan
+				stats.lastPlanSeq = entry.Seq
+			}
 			delete(a.pendingPlanByPID, pid)
 		}
 	}
@@ -1389,6 +1395,83 @@ func extractParameters(message string) string {
 	return strings.TrimSpace(message[idx+len("parameters:"):])
 }
 
+// pendingPlan is an auto_explain plan waiting for its statement line.
+type pendingPlan struct {
+	plan      string
+	queryText string // start of the "Query Text:" payload, flattened; "" when absent
+}
+
+// planQueryTextCap bounds the Query Text kept per pending plan: comparing a
+// prefix is enough to tell two statements apart.
+const planQueryTextCap = 512
+
+// extractPlanQueryText returns the beginning of an auto_explain "Query Text:"
+// payload, whitespace-collapsed and lower-cased. In stderr the plan nodes
+// follow on the same flattened line, so the result may run into them; callers
+// compare prefixes only.
+func extractPlanQueryText(message string) string {
+	i := strings.Index(message, "Query Text:")
+	if i < 0 {
+		return ""
+	}
+	text := message[i+len("Query Text:"):]
+	if len(text) > 4*planQueryTextCap {
+		text = text[:4*planQueryTextCap]
+	}
+	text = collapseSpaces(text)
+	if len(text) > planQueryTextCap {
+		text = text[:planQueryTextCap]
+	}
+	return text
+}
+
+// planBelongsTo tells whether a plan whose Query Text starts with queryText
+// was produced by the statement query. An SQL "EXECUTE name (…)" is planned
+// under its prepared text, "PREPARE name AS …". Plans without a Query Text
+// (unexpected format) are accepted, as before.
+func planBelongsTo(queryText, query string) bool {
+	if queryText == "" {
+		return true
+	}
+	q := collapseSpaces(query)
+	if len(q) > planQueryTextCap {
+		q = q[:planQueryTextCap]
+	}
+	q = strings.TrimSuffix(q, ";")
+	if strings.HasPrefix(queryText, q) || strings.HasPrefix(q, strings.TrimSuffix(queryText, ";")) {
+		return true
+	}
+	if rest, ok := strings.CutPrefix(q, "execute "); ok {
+		name, _, _ := strings.Cut(rest, " ")
+		name, _, _ = strings.Cut(name, "(")
+		return name != "" && strings.HasPrefix(queryText, "prepare "+name+" ")
+	}
+	return false
+}
+
+// collapseSpaces lower-cases s and reduces every run of whitespace to one space.
+func collapseSpaces(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	space := true
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
+			if !space {
+				b.WriteByte(' ')
+				space = true
+			}
+			continue
+		}
+		if c >= 'A' && c <= 'Z' {
+			c += 'a' - 'A'
+		}
+		b.WriteByte(c)
+		space = false
+	}
+	return strings.TrimSpace(b.String())
+}
+
 // extractPlanText extracts the execution plan text from an auto_explain message.
 // It strips the "duration: X ms  plan:" prefix and the "Query Text: ..." line.
 // Returns the plan nodes text only.
@@ -1408,14 +1491,17 @@ func extractPlanText(message string) string {
 	if strings.HasPrefix(text, "Query Text:") {
 		// Find end of Query Text line: next newline or next plan node keyword
 		if nlIdx := strings.IndexByte(text, '\n'); nlIdx != -1 {
-			// Format with preserved newlines (JSON/CSV)
-			text = strings.TrimLeft(text[nlIdx+1:], " \n\t")
+			// Format with preserved newlines (JSON/CSV). Fork: a multi-line
+			// Query Text and the Query Parameters line come before the
+			// first node; skip to it.
+			text = skipToPlanNode(text[nlIdx+1:])
 		} else {
 			// Format without newlines (stderr): find earliest plan node keyword
 			planKeywords := []string{
 				"Result ", "Seq Scan ", "Index Scan ", "Index Only Scan ",
 				"Bitmap ", "Nested Loop", "Hash Join", "Merge Join",
 				"Sort ", "Aggregate", "Group", "Limit ", "Append",
+				"Gather ", "Gather Merge ", "Unique ", "Incremental Sort ",
 				"HashAggregate", "GroupAggregate", "WindowAgg",
 				"Subquery Scan", "Materialize", "CTE Scan",
 				"{", // JSON plan format

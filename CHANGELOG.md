@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - fork Nagamo
+
+### Added
+- `quellog trace`: follows the slowest statements through the logs (prepared text, parameters, own auto_explain plan, executor vs. client time, temp files of the backend and its parallel workers, timeline, query ready for EXPLAIN). See docs/trace.md.
+- **Traces in every report**: the analysis traces the three slowest statements (`--trace-top N`, 0 to turn it off). Compact block in the text report, full traces with `--traces` or `--full`, a section in Markdown, a `traces` array in JSON and YAML, and in the HTML report a "Slowest Statements Traced" section, a trace modal (time split, query, replay, plan with Visualize, findings, temp files, timeline) and "Traced Runs" in the query detail. Split reports trace each period; the time filter keeps the traces that ran in the range.
+- Traces work with stderr, syslog, jsonlog and csvlog, from files, archives or standard input; `quellog trace` reads the logs once.
+- **Explained findings, in English or French** (`--lang en|fr`, default from `QUELLOG_LANG` then `LANG`): each finding says what happened with its numbers, whether it matters (its share of the statement's time, from the plan tree), the read-only queries that confirm it and what to propose. Covers the transfer to the client (actual throughput), sorts and hashes spilled to disk (with a work_mem to try), scans that throw most rows away (index to propose, type casts that defeat it), misestimates, missing parallel workers, lock waits, JIT and repeated conditions. Computed from the logs only.
+- jsonlog and csvlog `leader_pid` is kept (`LogEntry.LeaderPID`): parallel workers are tied to their leader exactly.
+
+### Security
+- HTML report: `escForJsAttr` did not escape backslashes, so log text holding `\'` could leave the JavaScript string of a Copy button and run code when the report was opened (XSS). Backslashes and carriage returns are now escaped.
+- `--open` on Windows went through `cmd /C start`, which interprets `&` and `|` in the report's file name; it now uses `rundll32 url.dll,FileProtocolHandler`, without a shell.
+- Dependencies with known vulnerabilities updated: andybalholm/brotli 1.2.7, klauspost/compress 1.20.2, golang.org/x/text 0.41.0, golang.org/x/sys 0.44.0 (go.mod now requires Go 1.25).
+- CI: CodeQL, govulncheck, gosec, gitleaks, Trivy, OpenSSF Scorecard, optional SonarQube Cloud, fuzzing of the trace parsers; actions pinned by commit. `SECURITY.md`.
+
+### Fixed
+- A pending auto_explain plan is attached to the next timed statement of the backend only when its Query Text is that statement (an SQL EXECUTE matches its PREPARE).
+- Flattened stderr plans no longer lose a top `Gather` / `Gather Merge` node.
+- jsonlog and csvlog plans no longer start with the rest of a multi-line Query Text and the Query Parameters line.
+
+### Changed
+- The stderr parser keeps the lines of an auto_explain plan (as jsonlog and csvlog do). The SQL analysis still reads them flattened, so every other output is unchanged.
+- The regression corpus runs with tracing off (`QUELLOG_TRACE_TOP=0`): it keeps checking that everything else matches the original quellog.
+
 ## [0.13.0] - 2026-09-24
 
 ### Added

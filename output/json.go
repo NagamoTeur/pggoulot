@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Alain-L/quellog/analysis"
+	"github.com/Alain-L/quellog/trace"
 )
 
 // JSON output structures, one per metrics section: SummaryJSON,
@@ -2166,6 +2167,11 @@ func buildJSONData(m analysis.AggregatedMetrics, sections []string, full bool) m
 	// Note: sql_overview is NOT included in default "all" mode.
 	// It's only shown when --sql-overview flag is used (handled via early return in execute.go)
 	// or when --full flag is used (added at the end of this function).
+
+	if has("traces") && len(m.Traces) > 0 {
+		data["traces"] = convertTraces(m)
+		data["traces_lang"] = trace.Lang()
+	}
 
 	if has("tempfiles") && m.TempFiles.Count > 0 {
 		tf := TempFilesJSON{

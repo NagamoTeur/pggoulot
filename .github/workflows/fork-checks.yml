@@ -1,0 +1,49 @@
+# Checks added by the fork: fuzzing of the trace parsers and lint of the
+# trace package (the original code keeps upstream's CI, in ci.yml).
+name: Fork checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.x'
+      - name: Generate web assets
+        run: go generate ./web/...
+      - name: Fuzz the trace parsers
+        run: |
+          for target in FuzzSplit FuzzParsePlan FuzzTracer; do
+            go test ./trace/ -run='^$' -fuzz="^$target\$" -fuzztime=60s
+          done
+
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.x'
+      - name: Generate web assets
+        run: go generate ./web/...
+      - name: golangci-lint (trace package)
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: latest
+          args: ./trace/...

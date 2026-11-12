@@ -2218,3 +2218,34 @@
 
 /* The split control reuses the shared .filter-dropdown markup/styles, so it
    matches the other filter pills and their open menus with no extra CSS. */
+
+/* Slowest Statements Traced (fork) */
+.tr-row { cursor: pointer; }
+.tr-table td:nth-child(2) { white-space: nowrap; }
+.tr-row:hover td { background: rgba(127, 127, 127, 0.08); }
+.tr-split { display: flex; height: 8px; min-width: 120px; border-radius: 4px; overflow: hidden; background: var(--border); }
+.tr-split span, .tr-split-legend i { display: inline-block; height: 100%; }
+.tr-split-exec { background: var(--chart-bar); }
+.tr-split-after { background: var(--text-muted); }
+.tr-split-after--client { background: var(--warning); }
+.tr-split-after--outside { background: var(--danger); }
+.tr-split--unknown span { background: repeating-linear-gradient(45deg, var(--border), var(--border) 4px, transparent 4px, transparent 8px); }
+.tr-verdict { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+.tr-split-legend { display: flex; gap: 16px; font-size: 0.75rem; margin-top: 6px; }
+.tr-split-legend i { width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+.tr-explanation { font-size: 0.8rem; margin: 8px 0 0; line-height: 1.45; }
+.tr-findings { margin: 0; padding-left: 1.1rem; font-size: 0.8rem; }
+.tr-findings li { margin-bottom: 6px; }
+.tr-stored td { font-weight: 600; }
+.tr-ev--end td, .tr-ev--plan td { font-weight: 600; }
+.tr-ev--error td:nth-child(3), .tr-ev--lock td:nth-child(3) { color: var(--danger); }
+.tr-ev--temp td:nth-child(3) { color: var(--warning); }
+.tr-main-finding { font-size: 0.75rem; max-width: 280px; }
+.tr-findings { list-style: none; padding-left: 0; }
+.tr-finding { border-left: 3px solid var(--border); padding: 2px 0 2px 10px; margin-bottom: 12px; }
+.tr-finding:first-child { border-left-color: var(--warning); }
+.tr-finding-title { margin-bottom: 4px; }
+.tr-weight { font-size: 0.7rem; color: var(--text-muted); margin-left: 6px; white-space: nowrap; }
+.tr-finding-part { font-size: 0.8rem; line-height: 1.45; margin-top: 4px; }
+.tr-finding-label { display: inline-block; min-width: 9rem; font-weight: 600; color: var(--text-muted); margin-right: 6px; }
+.tr-check { white-space: pre-wrap; font-size: 0.72rem; margin: 4px 0 0; }
