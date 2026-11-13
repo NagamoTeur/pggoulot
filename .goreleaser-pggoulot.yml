@@ -77,8 +77,10 @@ checksum:
 sboms:
   - artifacts: archive
 
+# The release notes come from the CHANGELOG (--release-notes in the
+# workflow); disabling the changelog here would drop them too.
 changelog:
-  disable: true
+  use: git
 
 release:
   github:
