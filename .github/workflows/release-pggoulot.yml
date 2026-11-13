@@ -1,8 +1,11 @@
 # Release of pggoulot: push a tag such as v0.1.0. The tests (race detector,
 # fuzzing, web tests, lint) and every security check of security.yml run
 # first; only when all pass does GoReleaser build the binaries, archives,
-# .deb and .rpm packages, checksums and SBOMs, and each file gets a signed
-# build provenance attestation (gh attestation verify).
+# .deb and .rpm packages (the .rpm signed for dnf), checksums and SBOMs.
+# Each file gets a signed build provenance attestation (gh attestation
+# verify) and a SLSA provenance file (.intoto.jsonl, slsa-verifier); the
+# signed .rpm of the last releases are published as a dnf repository on
+# GitHub Pages (packaging/pggoulot.repo).
 name: Release pggoulot
 
 on:
@@ -15,7 +18,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -34,10 +37,10 @@ jobs:
         run: |
           test -z "$(gofmt -s -l .)"
           go vet ./...
-          go install honnef.co/go/tools/cmd/staticcheck@2026.2.2
+          go install honnef.co/go/tools/cmd/staticcheck@54455593555daf6bfcf3c480faaada7de3145357 # 2026.2.2
           staticcheck ./...
       - name: Tests (race detector)
-        run: go test -race ./... -timeout 15m
+        run: go test -race ./... -timeout 30m
       - name: Web tests
         run: npm run test:unit && npm run test:contracts
       - name: Fuzz the trace parsers
@@ -93,6 +96,8 @@ jobs:
       contents: write
       id-token: write
       attestations: write
+    outputs:
+      hashes: ${{ steps.hashes.outputs.hashes }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -107,6 +112,17 @@ jobs:
         run: |
           awk '/^## \[/{n++} n==1' CHANGELOG.md | tail -n +2 > /tmp/notes.md
           test -s /tmp/notes.md
+      - name: RPM signing key
+        env:
+          RPM_GPG_PRIVATE_KEY: ${{ secrets.RPM_GPG_PRIVATE_KEY }}
+        run: |
+          if [ -z "$RPM_GPG_PRIVATE_KEY" ]; then
+            echo "::error::Secret RPM_GPG_PRIVATE_KEY missing: the .rpm must be signed for the dnf repository."
+            exit 1
+          fi
+          umask 077
+          printf '%s\n' "$RPM_GPG_PRIVATE_KEY" > "$RUNNER_TEMP/rpm-key.asc"
+          echo "RPM_KEY_FILE=$RUNNER_TEMP/rpm-key.asc" >> "$GITHUB_ENV"
       - uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
         with:
           distribution: goreleaser
@@ -114,6 +130,26 @@ jobs:
           args: release --clean --config .goreleaser-pggoulot.yml --release-notes /tmp/notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NFPM_PGGOULOT_RPM_PASSPHRASE: ${{ secrets.RPM_GPG_PASSPHRASE }}
+      - name: Forget the signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/rpm-key.asc"
+      - name: Check the .rpm signatures
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq rpm
+          db=$(mktemp -d)
+          rpmkeys --dbpath "$db" --import packaging/RPM-GPG-KEY-pggoulot
+          for f in dist/*.rpm; do
+            out=$(rpmkeys --dbpath "$db" --checksig "$f")
+            echo "$out"
+            case "$out" in *': digests signatures OK') ;; *) exit 1 ;; esac
+          done
+      - name: Hashes for the SLSA provenance
+        id: hashes
+        run: |
+          cd dist
+          echo "hashes=$(sha256sum ./*.tar.gz ./*.zip ./*.deb ./*.rpm | base64 -w0)" >> "$GITHUB_OUTPUT"
       - name: Provenance attestations
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
@@ -123,3 +159,80 @@ jobs:
             dist/*.deb
             dist/*.rpm
             dist/checksums.txt
+
+  # SLSA level 3 provenance of every file, attached to the release. The
+  # generator must be called by tag: its own verification checks it.
+  provenance:
+    needs: [release]
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0 # zizmor: ignore[unpinned-uses] reusable SLSA workflows are verified by tag
+    with:
+      base64-subjects: ${{ needs.release.outputs.hashes }}
+      upload-assets: true
+      provenance-name: pggoulot_${{ github.ref_name }}.intoto.jsonl
+
+  # dnf repository on GitHub Pages: the signed .rpm of the last five
+  # releases, with signed metadata (repo_gpgcheck).
+  dnf-repo:
+    needs: [release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}rpm/
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq createrepo-c rpm
+      - name: Signed .rpm of the last releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p site/rpm/packages
+          db=$(mktemp -d)
+          rpmkeys --dbpath "$db" --import packaging/RPM-GPG-KEY-pggoulot
+          gh release list -R "$GITHUB_REPOSITORY" --exclude-drafts --exclude-pre-releases --limit 5 --json tagName --jq '.[].tagName' |
+            while read -r tag; do
+              gh release download "$tag" -R "$GITHUB_REPOSITORY" -p '*.rpm' -D "$RUNNER_TEMP/rpm/$tag"
+            done
+          # Releases from before the signing key (v0.1.0) are left out.
+          for f in "$RUNNER_TEMP"/rpm/*/*.rpm; do
+            case "$(rpmkeys --dbpath "$db" --checksig "$f")" in
+              *': digests signatures OK') cp "$f" site/rpm/packages/ ;;
+              *) echo "left out (not signed): $f" ;;
+            esac
+          done
+          ls site/rpm/packages/*.rpm
+      - name: Metadata, signed
+        env:
+          RPM_GPG_PRIVATE_KEY: ${{ secrets.RPM_GPG_PRIVATE_KEY }}
+          RPM_GPG_PASSPHRASE: ${{ secrets.RPM_GPG_PASSPHRASE }}
+        run: |
+          createrepo_c --general-compress-type=gz site/rpm
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"
+          mkdir -m 700 "$GNUPGHOME"
+          printf '%s\n' "$RPM_GPG_PRIVATE_KEY" | gpg --batch --import
+          printf '%s' "$RPM_GPG_PASSPHRASE" | gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
+            --detach-sign --armor site/rpm/repodata/repomd.xml
+          gpgconf --kill all
+          rm -rf "$GNUPGHOME"
+          gpg --batch --no-default-keyring --keyring "$RUNNER_TEMP/pub.gpg" --import packaging/RPM-GPG-KEY-pggoulot
+          gpg --batch --no-default-keyring --keyring "$RUNNER_TEMP/pub.gpg" --verify site/rpm/repodata/repomd.xml.asc site/rpm/repodata/repomd.xml
+          cp packaging/RPM-GPG-KEY-pggoulot packaging/pggoulot.repo site/rpm/
+          printf '<!doctype html><meta charset="utf-8"><title>pggoulot</title><p><a href="https://github.com/NagamoTeur/pggoulot">pggoulot</a>: dnf repository in <a href="rpm/">rpm/</a>.\n' > site/index.html
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

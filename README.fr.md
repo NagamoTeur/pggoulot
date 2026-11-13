@@ -68,7 +68,17 @@ CONSTATS
 
 ## Installer
 
-Télécharger un paquet dans les [releases](https://github.com/NagamoTeur/pggoulot/releases) (Linux,
+Sur RHEL, Rocky, AlmaLinux ou Fedora, depuis le dépôt dnf signé :
+
+```bash
+sudo curl -fsSLo /etc/yum.repos.d/pggoulot.repo https://nagamoteur.github.io/pggoulot/rpm/pggoulot.repo
+sudo dnf install pggoulot
+```
+
+dnf vérifie la signature des paquets et des métadonnées du dépôt ; l'empreinte de la clé est
+`2731 BA17 E2FF D85B 2C0B 77F3 2BCC A3F7 D067 8743` (voir [SECURITY.md](SECURITY.md)). `dnf upgrade` installe ensuite chaque nouvelle release.
+
+Ailleurs, télécharger un paquet dans les [releases](https://github.com/NagamoTeur/pggoulot/releases) (Linux,
 macOS et Windows ; amd64 et arm64), le vérifier, puis l'installer :
 
 ```bash

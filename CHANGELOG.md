@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **dnf repository** for RHEL, Rocky, AlmaLinux and Fedora (`https://nagamoteur.github.io/pggoulot/rpm/`): the `.rpm` are signed and so are the repository metadata, published by the release workflow. Tested on Rocky Linux 9, UBI 10 and Fedora 43.
+- Each release ships a SLSA provenance file (`pggoulot_<tag>.intoto.jsonl`) next to the GitHub attestations.
+
+### Fixed
+- CI: the race-detector tests of the stderr parser (quellog's, about 10 minutes) could exceed the 15-minute limit on a slow runner; the limit is now 30 minutes.
+
+### Security
+- CI tools installed with `go install` (staticcheck, gosec, gitleaks) are pinned to a commit.
+
 ## [0.1.0] - 2026-11-13
 
 First release of pggoulot, built on quellog 0.13.0.

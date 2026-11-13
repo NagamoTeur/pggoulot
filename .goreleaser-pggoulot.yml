@@ -57,6 +57,11 @@ nfpms:
       - deb
       - rpm
     bindir: /usr/bin
+    # Signed for dnf when the release passes the key (passphrase in
+    # NFPM_PGGOULOT_RPM_PASSPHRASE); snapshot builds stay unsigned.
+    rpm:
+      signature:
+        key_file: '{{ if isEnvSet "RPM_KEY_FILE" }}{{ .Env.RPM_KEY_FILE }}{{ end }}'
     contents:
       - src: LICENSE
         dst: /usr/share/doc/pggoulot/LICENSE
@@ -91,4 +96,4 @@ release:
   header: |
     Built on [quellog](https://github.com/Alain-L/quellog) by Alain Lesage (not affiliated). See [FORK.md](https://github.com/NagamoTeur/pggoulot/blob/main/FORK.md) and the CHANGELOG.
 
-    Verify a download: `gh attestation verify <file> -R NagamoTeur/pggoulot` and `sha256sum -c checksums.txt`.
+    Verify a download: `gh attestation verify <file> -R NagamoTeur/pggoulot` and `sha256sum -c checksums.txt`. On RHEL, Rocky, Alma or Fedora, install it with dnf: see [the README](https://github.com/NagamoTeur/pggoulot#install).

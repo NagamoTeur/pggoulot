@@ -70,7 +70,17 @@ FINDINGS
 
 ## Install
 
-Download a package from the [releases](https://github.com/NagamoTeur/pggoulot/releases) (Linux,
+On RHEL, Rocky, AlmaLinux or Fedora, from the signed dnf repository:
+
+```bash
+sudo curl -fsSLo /etc/yum.repos.d/pggoulot.repo https://nagamoteur.github.io/pggoulot/rpm/pggoulot.repo
+sudo dnf install pggoulot
+```
+
+dnf checks the signature of the packages and of the repository metadata; the key's fingerprint is
+`2731 BA17 E2FF D85B 2C0B 77F3 2BCC A3F7 D067 8743` (see [SECURITY.md](SECURITY.md)). `dnf upgrade` then brings each new release.
+
+Elsewhere, download a package from the [releases](https://github.com/NagamoTeur/pggoulot/releases) (Linux,
 macOS and Windows; amd64 and arm64), check it, then install it:
 
 ```bash

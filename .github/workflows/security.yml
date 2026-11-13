@@ -150,7 +150,7 @@ jobs:
           go-version: '1.27.x'
           cache: false
       - name: Install gosec
-        run: go install github.com/securego/gosec/v2/cmd/gosec@v2.30.0
+        run: go install github.com/securego/gosec/v2/cmd/gosec@5eb1d104ef85ff2c905c877eb600e8c1dee33a22 # v2.30.0
       - name: Generate web assets
         run: go generate ./web/...
       # pggoulot's own packages must stay clean; the inherited quellog code is
@@ -213,7 +213,7 @@ jobs:
           cache: false
       - name: Secrets in the whole history
         run: |
-          go install github.com/zricethezav/gitleaks/v8@v8.30.1
+          go install github.com/zricethezav/gitleaks/v8@83d9cd684c87d95d656c1458ef04895a7f1cbd8e # v8.30.1
           gitleaks git --redact --no-banner .
 
   zizmor:
