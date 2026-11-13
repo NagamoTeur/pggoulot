@@ -2,7 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - pggoulot (built on quellog 0.13.0)
+## [0.1.0] - 2026-11-13
+
+First release of pggoulot, built on quellog 0.13.0.
 
 ### Added
 - `quellog trace`: follows the slowest statements through the logs (prepared text, parameters, own auto_explain plan, executor vs. client time, temp files of the backend and its parallel workers, timeline, query ready for EXPLAIN). See docs/trace.md.
@@ -28,6 +30,10 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - The stderr parser keeps the lines of an auto_explain plan (as jsonlog and csvlog do). The SQL analysis still reads them flattened, so every other output is unchanged.
 - The regression corpus runs with tracing off (`QUELLOG_TRACE_TOP=0`): it keeps checking that everything else matches the original quellog.
+
+---
+
+The sections below are the releases of [quellog](https://github.com/Alain-L/quellog), which pggoulot is built on.
 
 ## [0.13.0] - 2026-09-24
 
