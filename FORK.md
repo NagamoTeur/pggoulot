@@ -21,19 +21,37 @@ sudo apt install ./pggoulot_0.1.0_linux_amd64.deb
 
 `pggoulot` s'installe à côté de `quellog` sans le remplacer.
 
-## Publier une version
+## Branches
 
-Ajouter la section de la version en tête du CHANGELOG (`## [0.1.0] - date`), commiter, puis poser
-le tag :
+On travaille sur `dev` : chaque push y lance les tests, le fuzzing et les contrôles de sécurité.
+Pour livrer, une pull request `dev` → `main` relance les mêmes contrôles, qui doivent passer pour
+fusionner (`main` est protégée, seul l'administrateur peut passer outre la relecture). Chaque fusion
+dans `main` lance le pipeline **Main** (`.github/workflows/main.yml`) : tests, contrôles du fork,
+tout `security.yml` et SonarQube ; seulement s'ils passent, les paquets sont construits, attestés
+et joints au run pendant 30 jours.
 
 ```bash
-git tag v0.1.0 && git push origin v0.1.0
+git switch dev                                   # travailler, commiter, pousser
+gh pr create -B main -H dev -f                   # livrer
+gh pr merge --merge --admin                      # fusionner une fois les contrôles verts
+```
+
+Dependabot et l'issue « Merge the original quellog » visent aussi `dev`.
+
+## Publier une version
+
+Sur `dev`, ajouter la section de la version en tête du CHANGELOG (`## [0.1.0] - date`), livrer
+dans `main`, puis poser le tag sur `main` :
+
+```bash
+git switch main && git pull && git tag -a v0.1.0 -m "pggoulot 0.1.0" && git push origin v0.1.0
 ```
 
 `.github/workflows/release-pggoulot.yml` relance alors tous les contrôles (tests avec détection de
 courses, tests JS, fuzzing, tout `security.yml`, et la quality gate SonarQube si elle est
 configurée) ; s'ils passent, GoReleaser (`.goreleaser-pggoulot.yml`) construit et publie la release,
-puis chaque fichier reçoit son attestation. pggoulot a sa propre numérotation ; le CHANGELOG indique la version de quellog sur laquelle il est bâti.
+puis chaque fichier reçoit son attestation et sa provenance SLSA, et le dépôt dnf (GitHub Pages)
+est republié avec les `.rpm` signés. pggoulot a sa propre numérotation ; le CHANGELOG indique la version de quellog sur laquelle il est bâti.
 
 ## Chez un client
 
@@ -108,10 +126,11 @@ go test ./...
 go build .
 ```
 
-La CI (`.github/workflows/`) lance à chaque push : tests (détection de courses, corpus de
-régression, tests JS, compilation WASM TinyGo), fuzzing et golangci-lint, les contrôles de sécurité
-(CodeQL, Semgrep, gosec, govulncheck, OSV-Scanner, Trivy, gitleaks, zizmor) et la construction des
-paquets, joints au run pendant 30 jours. Le README affiche l'état de chaque contrôle.
+La CI (`.github/workflows/`) lance sur `dev` et sur chaque pull request : tests (détection de
+courses, corpus de régression, tests JS, compilation WASM TinyGo), fuzzing et golangci-lint, les
+contrôles de sécurité (CodeQL, Semgrep, gosec, govulncheck, OSV-Scanner, Trivy, gitleaks, zizmor).
+Sur `main`, le pipeline Main enchaîne les mêmes contrôles puis la construction des paquets (voir
+Branches). Le README affiche l'état de chaque contrôle sur `main`.
 
 ## Sécurité
 
@@ -132,10 +151,11 @@ dans le nom du fichier ; c'est maintenant `rundll32`, sans shell). Voir aussi `S
 ## Suivre l'original
 
 Chaque lundi, `.github/workflows/upstream-watch.yml` ouvre (ou met à jour) une issue
-« Merge the original quellog » quand quellog a des changements pas encore fusionnés. Pour fusionner :
+« Merge the original quellog » quand quellog a des changements pas encore fusionnés. Pour fusionner
+(sur `dev`, puis pull request vers `main`) :
 
 ```bash
-git fetch upstream && git merge upstream/main
+git switch dev && git fetch upstream && git merge upstream/main
 go generate ./web/... && go test ./...
 ```
 

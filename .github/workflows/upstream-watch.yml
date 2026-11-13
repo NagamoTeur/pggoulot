@@ -37,10 +37,10 @@ jobs:
             git log --oneline --no-merges HEAD..upstream/main | head -50
             echo '```'
             echo
-            echo "To merge, then check that the regression corpus still passes:"
+            echo "To merge on dev, check that the regression corpus still passes, then open a pull request dev → main:"
             echo
             echo '```bash'
-            echo 'git fetch upstream && git merge upstream/main'
+            echo 'git switch dev && git fetch upstream && git merge upstream/main'
             echo 'go generate ./web/... && go test ./...'
             echo '```'
           } > body.md

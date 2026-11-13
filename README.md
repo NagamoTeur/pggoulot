@@ -6,9 +6,8 @@
 
 *Goulot d'étranglement* is French for bottleneck. 🇫🇷 [Lire en français](README.fr.md)
 
-[![CI](https://github.com/NagamoTeur/pggoulot/actions/workflows/ci.yml/badge.svg)](https://github.com/NagamoTeur/pggoulot/actions/workflows/ci.yml)
-[![Security](https://github.com/NagamoTeur/pggoulot/actions/workflows/security.yml/badge.svg)](https://github.com/NagamoTeur/pggoulot/actions/workflows/security.yml)
-[![Packages](https://github.com/NagamoTeur/pggoulot/actions/workflows/packages.yml/badge.svg)](https://github.com/NagamoTeur/pggoulot/actions/workflows/packages.yml)
+[![Main](https://github.com/NagamoTeur/pggoulot/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/NagamoTeur/pggoulot/actions/workflows/main.yml)
+[![Security](https://github.com/NagamoTeur/pggoulot/actions/workflows/security.yml/badge.svg?branch=dev)](https://github.com/NagamoTeur/pggoulot/actions/workflows/security.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/NagamoTeur/pggoulot/badge)](https://scorecard.dev/viewer/?uri=github.com/NagamoTeur/pggoulot)
 [![Release](https://img.shields.io/github/v/release/NagamoTeur/pggoulot?include_prereleases&sort=semver)](https://github.com/NagamoTeur/pggoulot/releases)
 [![Go](https://img.shields.io/github/go-mod/go-version/NagamoTeur/pggoulot)](go.mod)
@@ -107,8 +106,9 @@ else (all quellog commands work with `pggoulot`).
 
 ## Security
 
-Every push and pull request runs the checks below; a release is only built when **all** of them
-pass, then every file it publishes is attested. Reports land in the repository's
+Every push to `dev` and every pull request runs the checks below. Each merge into `main` runs them
+again, and the packages are only built when **all** of them pass; the same goes for a release,
+whose every published file is attested. Reports land in the repository's
 [Security tab](https://github.com/NagamoTeur/pggoulot/security).
 
 | Check | What it looks for | Status |

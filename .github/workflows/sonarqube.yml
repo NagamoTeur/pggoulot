@@ -4,9 +4,13 @@ name: SonarQube
 
 on:
   push:
-    branches: [main]
+    branches: [dev]
   pull_request:
   workflow_dispatch:
+  workflow_call:
+    secrets:
+      SONAR_TOKEN:
+        required: false
 
 permissions:
   contents: read

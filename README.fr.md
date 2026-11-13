@@ -6,9 +6,8 @@
 
 🇬🇧 [English](README.md)
 
-[![CI](https://github.com/NagamoTeur/pggoulot/actions/workflows/ci.yml/badge.svg)](https://github.com/NagamoTeur/pggoulot/actions/workflows/ci.yml)
-[![Sécurité](https://github.com/NagamoTeur/pggoulot/actions/workflows/security.yml/badge.svg)](https://github.com/NagamoTeur/pggoulot/actions/workflows/security.yml)
-[![Paquets](https://github.com/NagamoTeur/pggoulot/actions/workflows/packages.yml/badge.svg)](https://github.com/NagamoTeur/pggoulot/actions/workflows/packages.yml)
+[![Main](https://github.com/NagamoTeur/pggoulot/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/NagamoTeur/pggoulot/actions/workflows/main.yml)
+[![Sécurité](https://github.com/NagamoTeur/pggoulot/actions/workflows/security.yml/badge.svg?branch=dev)](https://github.com/NagamoTeur/pggoulot/actions/workflows/security.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/NagamoTeur/pggoulot/badge)](https://scorecard.dev/viewer/?uri=github.com/NagamoTeur/pggoulot)
 [![Release](https://img.shields.io/github/v/release/NagamoTeur/pggoulot?include_prereleases&sort=semver)](https://github.com/NagamoTeur/pggoulot/releases)
 [![Licence PostgreSQL](https://img.shields.io/badge/licence-PostgreSQL-blue)](LICENSE)
@@ -105,8 +104,9 @@ reste (toutes les commandes de quellog marchent avec `pggoulot`), et [FORK.md](F
 
 ## Sécurité
 
-Chaque push et chaque pull request passent les contrôles ci-dessous ; une release n'est construite
-que si **tous** passent, puis chaque fichier publié reçoit une attestation. Les rapports sont dans
+Chaque push sur `dev` et chaque pull request passent les contrôles ci-dessous. Chaque fusion dans
+`main` les relance, et les paquets ne sont construits que si **tous** passent ; de même pour une
+release, dont chaque fichier publié reçoit une attestation. Les rapports sont dans
 l'[onglet Security](https://github.com/NagamoTeur/pggoulot/security) du dépôt.
 
 | Contrôle | Ce qu'il cherche | État |

@@ -4,9 +4,10 @@ name: Fork checks
 
 on:
   push:
-    branches: [main]
+    branches: [dev]
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
