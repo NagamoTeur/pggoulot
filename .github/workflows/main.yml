@@ -13,6 +13,8 @@ on:
 permissions:
   contents: read
 
+# One run at a time; when merges pile up, only the latest waiting one runs
+# (the packages of the newest main are the ones that matter).
 concurrency:
   group: main-${{ github.ref }}
   cancel-in-progress: false

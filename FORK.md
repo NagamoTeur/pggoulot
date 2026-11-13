@@ -36,7 +36,10 @@ gh pr create -B main -H dev -f                   # livrer
 gh pr merge --merge --admin                      # fusionner une fois les contrôles verts
 ```
 
-Dependabot et l'issue « Merge the original quellog » visent aussi `dev`.
+Les mises à jour des actions par Dependabot et l'issue « Merge the original quellog » visent
+aussi `dev`. Les correctifs de sécurité Go de Dependabot, eux, visent toujours `main` (GitHub
+ignore la branche cible pour eux) : après en avoir fusionné un, ramener `main` dans `dev`
+(`git switch dev && git merge origin/main`).
 
 ## Publier une version
 

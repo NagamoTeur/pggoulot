@@ -2,12 +2,13 @@ version: 2
 updates:
   # Go: security updates only (enabled in the repository settings). Routine
   # updates often need a newer Go than TinyGo accepts for the WASM demo.
+  # Security updates always target the default branch (main), whatever
+  # target-branch says: merge main back into dev after one.
   - package-ecosystem: gomod
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 0
-    target-branch: dev
   - package-ecosystem: github-actions
     directory: /
     target-branch: dev
